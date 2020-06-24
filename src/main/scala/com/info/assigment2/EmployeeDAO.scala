@@ -1,13 +1,15 @@
 package com.info.day9
 
 import slick.jdbc.MySQLProfile.api._
-
-import scala.concurrent.Future
 import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 
 class EmployeeDAO {
   var driverName: String = "com.mysql.cj.jdbc.Driver"
-  var url: String = "jdbc:mysql://localhost:3306/mydb?user=root&password=root"
+  //jdbc:mysql://localhost:3306/mydb?user=root&password=root&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+  var url: String = "jdbc:mysql://localhost:3306/mydb?user=root&password=root&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
   val db = Database.forURL(url, driver = driverName)
 
   // creating mapping class
@@ -32,10 +34,11 @@ class EmployeeDAO {
     return result
   }
 
-  def createEmployeeWithPlus(emp: EmployeeRow): Unit = {
+  def createEmployeeWithPlus(emp: EmployeeRow): Future[Int] = {
     val action = employees += emp;
-    //action.statements.foreach(println(_))
+    action.statements.foreach(println(_))
     val result = db.run(action)
+    result
   }
 
   def createListofEmployees(emps: List[EmployeeRow]): Unit = {
@@ -53,10 +56,10 @@ class EmployeeDAO {
 
   }
 
-  def getAllEmployee(): Unit = {
+  def getAllEmployee(): Future[Any] = {
     var action = employees.result
     action.statements.foreach(println(_))
-
+    db.run(action)
   }
 
   /**
@@ -72,14 +75,14 @@ class EmployeeDAO {
   /**
     *. Get All Employees Where Name Contains v or V from database employee table
     */
-  def getEmployee(str: String): Future[Any] = {
+  def getEmployeeStartsWith(str: String): Future[Any] = {
     val action = employees
       .filter(
         emp =>
           emp.employeeName.startsWith(str) || emp.employeeName.startsWith(str)
       )
       .result
-
+//    action.statements.foreach(println(_))
     db.run(action)
   }
 
@@ -108,34 +111,39 @@ class EmployeeDAO {
   /**
     * Get an average salary of employees. (Double)
     */
-//  def getAvgSal(): Future[Any] = {
-//    val action = (employees.map(x => x.salary).sum / employees.length).result
-//    return db.run(action)
-//  }
+  def getAvgSal(): Unit = {
 
-  /**
-    * Get all employees whose salary is more than the average salary of employees
-    */
-  def getEmployeesBySal(sal: Double): Future[Any] = {
+    val action = employees.map(x => x.salary).result
+      db.run(action).onComplete({
+      case Success(x:Vector[Double])=> println(x.reduce(_+_)/x.length)
+      case Failure(err)=>
+        println("error inside getAvgSal")
+
+    })
+  }
+
+
+  def getEmployeesSal_>(sal: Double): Future[Any] = {
     val action = employees
       .filter(emp => emp.salary > sal)
       .result
     return db.run(action)
   }
 
+  /**
+   * Get all employees whose salary is more than the average salary of employees
+   */
   def getGT_Avg_Sal(): Unit = {
-    getEmployeesBySal(100).isCompleted {
-      case Success(x) => println(s"Redeemed Result: ${x}");
-      case Failure(f) =>
-        println(s"Failure: ${f}")
-//        println("Click any key to terminate program");
-    }
-//    var empCount: Future[Double] = getAvgSal();
+    val action = employees.map(x => x.salary).result
+    db.run(action).onComplete({
+      case Success(x:Vector[Double])=> {
+        println("Avg sal ",x.reduce(_+_)/x.length)
+        getEmployeesSal_>(x.reduce(_+_)/x.length)
+      }
+      case Failure(err)=>
+        println("error inside getAvgSal")
 
-//    return empCount.onComplete {
-//      case Success(x) => getEmployeesBySal(x);
-//      case Failure(f) => getEmployeesBySal(10.34)
-//    };
+    })
   }
 
 }
