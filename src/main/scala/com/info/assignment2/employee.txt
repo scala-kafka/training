@@ -1,0 +1,6 @@
+eno,ename,gender,salary
+101,Kiran,M,45000
+102,Aashu,F,55000
+103,Vilok,M,35000
+104,Varun,M,85000
+105,Harini,F,65000

@@ -1,0 +1,193 @@
+
+Storage
+	Hadoop Distributed File System
+Processing (Computation)
+	MapReduce
+	Hive
+	Apache Spark
+	
+Apache Spark
+	Java
+	Scala
+	Python
+	R
+	
+Apache Spark + Scala 
+--------------------
+
+Apache Spark:
+	Spark Core
+	Spark SQL
+	Spark Streaming (Kafka)
+
+	Spark MLib
+	Spark Graphx
+
+Memory Management:
+------------------
+	YARN
+	MESOS
+	SparkContect
+	
+Storages:
+----------
+Local File System
+Hadoop Distributed File System
+SQL Databases
+NoSQL Databases
+S3/Redshift/Blob/DL
+---------------
+
+
+Spark Core:
+------------
+	RDD: Resilient Distributed DataSet
+		object >>> collection of objects
+		
+	How to start Spark?
+	
+	interactive mode (CMD)
+		> Spark-shell
+			SparkContext object is available as sc 
+			SparkSession object is available as spark
+		
+	Scripting mode (IntelliJ)
+		we need to create SparkContect object
+		we need to create SparkSession object	
+		
+	How many ways we can create an RDD?
+		1. using parallelize() method
+		2. using textFile() method
+		3. using another RDD 
+	
+	RDD Functions/Methods	
+		Transformations		(when we use Transformations functions on RDD... it will generate RDD)
+			map()
+			flatMap()
+			reduceByKey()
+			groupByKey()
+			sortByKey()
+			....
+		Action			(When we use Action on RDD... it will not generate RDD)
+			collect()
+			head()
+			take()
+			saveAsTextFile()
+			persist()
+			cache()
+
+Map: Array[Array[String]] >>> RDD[Array[String]]
+Array(
+	Array(I, am, learning, Spark)
+	Array(Spark, is, an, execution, engine)
+	----
+	----
+)
+
+FlatMap: Array[String]  >>> RDD[String]
+Array(I, am, learning, Spark, Spark, is, an, execution, engine, ------)
+=====================================
+		
+program1:
+	Find Trending word from the give input file (Find count of each word)
+	
+Step1: Loading data from textFile (textFile())
+		val lines = sc.textFile("C:\\Setup\\dataset\\sample.txt")	
+		output:
+			Array(I am learning Spark, Spark is an execution engine, Spark is a Framework, Spark Core, Spark SQL, Core and SQL are ecosystems, Spark is having ecosystems, Spark execution is in-memory, Spark execution is in-memory, Spark execution is in-memory, "Spark execution is in-memory ", Spark is a Framework, Spark Core, Spark SQL, Spark is a Framework, Spark Core, spark SQL)
+			
+Step2: Splitting data using space (flatMap())
+		val words = lines.flatMap(line => line.split(" "))
+		output:
+			Array(I, am, learning, Spark, Spark, is, an, execution, engine, Spark, is, a, Framework, Spark, Core, Spark, SQL, Core, and, SQL, are, ecosystems, Spark, is, having, ecosystems, Spark, execution, is, in-memory, Spark, execution, is, in-memory, Spark, execution, is, in-memory, Spark, execution, is, in-memory, Spark, is, a, Framework, Spark, Core, Spark, SQL, Spark, is, a, Framework, Spark, Core, spark, SQL)
+	
+Step3: Add 1 to each word and make it tuple - PairRDD (map())
+		val pairWord = words.map(word => (word, 1))
+		output:
+			Array((I,1), (am,1), (learning,1), (Spark,1), (Spark,1), (is,1), (an,1), (execution,1), (engine,1), (Spark,1), (is,1), (a,1), (Framework,1), (Spark,1), (Core,1), (Spark,1), (SQL,1), (Core,1), (and,1), (SQL,1), (are,1), (ecosystems,1), (Spark,1), (is,1), (having,1), (ecosystems,1), (Spark,1), (execution,1), (is,1), (in-memory,1), (Spark,1), (execution,1), (is,1), (in-memory,1), (Spark,1), (execution,1), (is,1), (in-memory,1), (Spark,1), (execution,1), (is,1), (in-memory,1), (Spark,1), (is,1), (a,1), (Framework,1), (Spark,1), (Core,1), (Spark,1), (SQL,1), (Spark,1), (is,1), (a,1), (Framework,1), (Spark,1), (Core,1), (spark,1), (SQL,1))
+			
+Step4: Calculate the count of each word (reduceByKey())
+		 val result = pairWord.reduceByKey((v1, v2) => v1+v2)
+		 output:
+			Array((are,1), (learning,1), (is,9), (am,1), (Framework,3), (SQL,4), (execution,5), (engine,1), (Spark,15), (in-memory,4), (spark,1), (a,3), (having,1), (I,1), (an,1), (and,1), (Core,4), (ecosystems,2))
+	================================
+			
+	val lines = sc.textFile("C:\\Setup\\dataset\\sample.txt")	
+
+	val result = lines.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey((v1, v2) => v1+v2)
+			
+=================================
+Usecase:
+	eno,ename,gender,salary
+	101,Kiran,M,45000
+	102,Aashu,F,55000
+	103,Vilok,M,35000
+	104,Varun,M,85000
+	105,Harini,F,65000
+	--------------------
+	
+Program-2: Find sum of employees salaries
+-------------------------------------------
+scala> val rows = sc.textFile("C:\\Setup\\dataset\\employee.txt")
+rows: org.apache.spark.rdd.RDD[String] = C:\Setup\dataset\employee.txt MapPartitionsRDD[52] at textFile at <console>:24
+
+scala> val head = rows.first
+head: String = eno,ename,gender,salary
+
+scala> val row_no_head = rows.filter(row => row != head)
+row_no_head: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[53] at filter at <console>:27
+
+scala> val splitRows = row_no_head.map(row => row.split(","))
+splitRows: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[54] at map at <console>:25
+
+scala> val salaries = splitRows.map(row => row(3).toInt)
+salaries: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[55] at map at <console>:25
+
+scala> val result = salaries.reduce(_+_)
+result: Int = 285000
+=======================
+Single line coding
+====================	
+scala> val rows = sc.textFile("C:\\Setup\\dataset\\employee.txt")
+rows: org.apache.spark.rdd.RDD[String] = C:\Setup\dataset\employee.txt MapPartitionsRDD[57] at textFile at <console>:24
+
+scala> val head = rows.first
+head: String = eno,ename,gender,salary
+
+scala> val result = rows.filter(row => row != head).map(row => row.split(",")).map(row => row(3).toInt).reduce(_+_)
+result: Int = 285000
+======================	
+	
+Usecase:
+	Usecase:
+	eno,ename,gender,Age
+	101,Kiran,M,23
+	102,Aashu,F,36
+	103,Vilok,M,32
+	104,Varun,M,28
+	105,Harini,F,31
+	--------------------
+	
+program-3
+	Find Trending word from the give input file
+	
+	val lines = sc.textFile("C:\\Setup\\dataset\\sample.txt")	
+	val result = lines.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey((v1, v2) => v1+v2)
+	==================
+	or
+	==================
+	val trendingWord = lines.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_+_).sortBy(value => value._2, false).first
+	==================
+	or
+	==================
+	val trendingWord = lines.flatMap(line => line.split(" "))
+								.map(word => (word, 1))
+								.reduceByKey(_+_)
+								.sortBy(value => value._2, false)
+								.first
+	==================
+	
+
+
+
+
